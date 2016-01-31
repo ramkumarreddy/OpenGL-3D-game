@@ -215,15 +215,16 @@ bool arrow_work=0;
 bool x_turn =0;
 bool z_turn =1;
 int no_of_walks =0;
+float obstacle;
 
 int const test[10][10] = {{9,0,9,9,9,9,9,9,9,9},
-                {9,9,9,9,9,9,0,9,9,9},
+                {9,9,0,9,9,9,0,9,9,9},
                 {9,9,9,9,9,9,9,9,9,9},
-                {0,9,9,9,9,9,9,9,9,0},
+                {0,9,9,0,9,9,9,9,9,0},
                 {9,9,9,9,9,9,0,9,9,9},
                 {9,9,9,13,9,9,9,9,9,9},
                 {9,9,9,9,9,9,0,13,9,9},
-                {9,9,9,9,9,9,9,9,9,0},
+                {9,9,0,9,9,9,9,9,9,0},
                 {9,9,9,9,0,9,9,9,9,9},
                 {9,9,0,9,9,9,9,9,9,9}};
 
@@ -272,7 +273,11 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
         	z_turn=0;
         	ho_t = floor(ho_t*10);
         	ho_t=ho_t/10;
-          no_of_walks=8;
+          no_of_walks=1;
+          cout << ho_t << " " << vo_t << endl;
+          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
+            ho_t+=0.2;
+          cout << ho_t << " " << vo_t << endl;
         	break;
         case 'd':
         	x_turn=1;
@@ -281,7 +286,9 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
         		ho_t+=0.2;
         	ho_t = floor(ho_t*10);
         	ho_t=ho_t/10;
-          no_of_walks=8;
+          no_of_walks=1;
+          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
+            ho_t-=0.2;
         	break;
         case 'w':
         	x_turn=0;
@@ -290,7 +297,9 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
         		vo_t-=0.2;
         	vo_t = floor(vo_t*10);
         	vo_t=vo_t/10;
-          no_of_walks=8;
+          no_of_walks=1;
+          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
+            vo_t+=0.2;
         	break;
         case 's':
         	x_turn=0;
@@ -299,7 +308,9 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
         		vo_t+=0.2;
         	vo_t = floor(vo_t*10);
         	vo_t=vo_t/10;
-          no_of_walks=8;
+          no_of_walks=1;
+          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
+            vo_t-=0.2;
         	break;
 
 		default:
@@ -494,11 +505,6 @@ void draw_cube(VAO *obj,float x_pos,float y_pos,float z_pos)
 
 void draw_cuboid(VAO *obj,float x_pos,float y_pos,float z_pos,int flag,int x_walk,int z_walk)
 {
-  // if(no_of_walks==0)
-  // {
-  //   z_walk=0;
-  //   x_turn=0;
-  // }
 	glm::mat4 VP = Matrices.projection * Matrices.view;
  	glm::mat4 MVP;
   Matrices.model = glm::mat4(1.0f);
@@ -587,13 +593,26 @@ if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]==0)
 		arrow_work =1;
 }
 
+// if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
+// {
+//   obstacle=1;
+//   if(x_walk==1)
+//   {
+
+//   }
+// }
+// cout << obstacle << endl;
+
   // Increment angles
-  float increments = 1;
-  if((rectangle_rotation>25 || rectangle_rotation<-25) && no_of_walks>=0)
-  {
-  	rectangle_rot_dir *=-1;
-    // no_of_walks--;
-  }
+float increments = 1;
+if((rectangle_rotation>25 || rectangle_rotation<-25) && no_of_walks>=0)
+{
+  rectangle_rot_dir *=-1;
+  cout << "{{{{{{{{{{" << no_of_walks <<  endl;
+  if(no_of_walks>0)
+    no_of_walks--;
+  cout << "<<<<<<" << no_of_walks <<  endl;
+}
 
   // cout << x_turn << " " << z_turn << endl;
   // camera_rotation_angle++; // Simulating camera rotation
@@ -660,7 +679,7 @@ void initGL (GLFWwindow* window, int width, int height)
   trans = createRectangle(0.2,0.2,0.2,GL_LINE);
   forplayer = createRectangle(0.05,0.2,0.05,GL_FILL);
   body = createRectangle(0.2,0.2,0.05,GL_FILL);
-  body_x = createRectangle(0.05,0.1,0.1,GL_FILL);
+  body_x = createRectangle(0.05,0.2,0.2,GL_FILL);
 	
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
