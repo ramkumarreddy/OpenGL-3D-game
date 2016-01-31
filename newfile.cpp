@@ -208,11 +208,18 @@ float rectangle_rot_dir = 1;
 bool triangle_rot_status = true;
 bool rectangle_rot_status = true;
 float cube_size = 0.2;
+float ho_t=0;
+float vo_t=0;
+float fall=0;
+bool arrow_work=0;
+bool x_turn =0;
+bool z_turn =1;
+int no_of_walks =0;
 
 int const test[10][10] = {{9,0,9,9,9,9,9,9,9,9},
                 {9,9,9,9,9,9,0,9,9,9},
                 {9,9,9,9,9,9,9,9,9,9},
-                {9,9,9,9,9,9,9,9,9,0},
+                {0,9,9,9,9,9,9,9,9,0},
                 {9,9,9,9,9,9,0,9,9,9},
                 {9,9,9,13,9,9,9,9,9,9},
                 {9,9,9,9,9,9,0,13,9,9},
@@ -224,8 +231,6 @@ int const test[10][10] = {{9,0,9,9,9,9,9,9,9,9},
 /* Prefered for Keyboard events */
 void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
 {
-     // Function is called first on GLFW_PRESS.
-
     if (action == GLFW_RELEASE) {
         switch (key) {
             case GLFW_KEY_C:
@@ -260,6 +265,43 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 		case 'q':
             quit(window);
             break;
+        case 'a':
+        	if(arrow_work==0)
+        		ho_t-=0.2;
+        	x_turn=1;
+        	z_turn=0;
+        	ho_t = floor(ho_t*10);
+        	ho_t=ho_t/10;
+          no_of_walks=8;
+        	break;
+        case 'd':
+        	x_turn=1;
+        	z_turn=0;
+        	if(arrow_work==0)
+        		ho_t+=0.2;
+        	ho_t = floor(ho_t*10);
+        	ho_t=ho_t/10;
+          no_of_walks=8;
+        	break;
+        case 'w':
+        	x_turn=0;
+        	z_turn=1;
+        	if(arrow_work==0)
+        		vo_t-=0.2;
+        	vo_t = floor(vo_t*10);
+        	vo_t=vo_t/10;
+          no_of_walks=8;
+        	break;
+        case 's':
+        	x_turn=0;
+        	z_turn=1;
+        	if(arrow_work==0)
+        		vo_t+=0.2;
+        	vo_t = floor(vo_t*10);
+        	vo_t=vo_t/10;
+          no_of_walks=8;
+        	break;
+
 		default:
 			break;
 	}
@@ -310,7 +352,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 500.0f);
 }
 
-VAO *triangle, *rectangle ,*trans, *forplayer;
+VAO *triangle, *rectangle ,*trans, *forplayer, *body, *body_x;
 
 // Creates the triangle object used in this sample code
 void createTriangle ()
@@ -450,16 +492,29 @@ void draw_cube(VAO *obj,float x_pos,float y_pos,float z_pos)
   draw3DObject(obj);
 }
 
-void draw_cuboid(VAO *obj,float x_pos,float y_pos,float z_pos,int flag)
+void draw_cuboid(VAO *obj,float x_pos,float y_pos,float z_pos,int flag,int x_walk,int z_walk)
 {
+  // if(no_of_walks==0)
+  // {
+  //   z_walk=0;
+  //   x_turn=0;
+  // }
 	glm::mat4 VP = Matrices.projection * Matrices.view;
  	glm::mat4 MVP;
-   Matrices.model = glm::mat4(1.0f);
-   glm::mat4 translateRectangle = glm::translate (glm::vec3(x_pos, y_pos, z_pos));
-   glm::mat4 translateRectangle1 = glm::translate (glm::vec3(0, 0.2, 0));
-   glm::mat4 translateRectangle2 = glm::translate (glm::vec3(0, -0.2, 0));
-   glm::mat4 rotateRectangle = glm::rotate((float)(flag*rectangle_rotation*M_PI/180.0f), glm::vec3(1,0,0));
-   Matrices.model *= (translateRectangle * translateRectangle1 * rotateRectangle * translateRectangle2);
+  Matrices.model = glm::mat4(1.0f);
+  glm::mat4 translateRectangle = glm::translate (glm::vec3(x_pos, y_pos, z_pos));
+  glm::mat4 translateRectangle1 = glm::translate (glm::vec3(0, 0.2, 0));
+  glm::mat4 translateRectangle2 = glm::translate (glm::vec3(0, -0.2, 0));
+  glm::mat4 rotateRectangle = glm::rotate((float)(flag*rectangle_rotation*M_PI/180.0f), glm::vec3(z_walk,0,x_walk));
+  if(no_of_walks!=0)
+  {
+    Matrices.model *= (translateRectangle * translateRectangle1 * rotateRectangle * translateRectangle2);
+  }
+  else
+  {
+      // cout << "}}}}}" << endl;
+      Matrices.model *= (translateRectangle);
+  }
   MVP = VP * Matrices.model;
   glUniformMatrix4fv(Matrices.MatrixID, 1, GL_FALSE, &MVP[0][0]);
   draw3DObject(obj);
@@ -476,6 +531,7 @@ void draw ()
   glUseProgram (programID);
 
   // Eye - Location of camera. Don't change unless you are sure!!
+  //glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
   glm::vec3 eye ( 5*cos(camera_rotation_angle*M_PI/180.0f), 0, 5*sin(camera_rotation_angle*M_PI/180.0f) );
   // Target - Where is the camera looking at.  Don't change unless you are sure!!
   glm::vec3 target (0, 0, 0);
@@ -485,7 +541,7 @@ void draw ()
   // Compute Camera matrix (view)
   // Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
   //  Don't change unless you are sure!!
-  Matrices.view = glm::lookAt(glm::vec3(0,2,3), glm::vec3(-0.4,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+  Matrices.view = glm::lookAt(glm::vec3(5,20,30), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
 
   // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
   //  Don't change unless you are sure!!
@@ -496,6 +552,18 @@ void draw ()
   //  Don't change unless you are sure!!
   glm::mat4 MVP;	// MVP = Projection * View * Model
 
+if(z_turn==1)
+{
+  draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,1,0,1);
+  draw_cuboid(forplayer,-2.8+ho_t,2+fall,vo_t+0.8,-1,0,1);
+  draw_cube(body,-2.9+ho_t,2.3+fall,vo_t+0.8);
+}
+if(x_turn==1)
+{
+  draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,1,1,0);
+  draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,-1,1,0);
+  draw_cube(body_x,-3+ho_t,2.3+fall,vo_t+0.8);      
+}
 
 for(int i=0;i<10;i++)
 {
@@ -510,17 +578,25 @@ for(int i=0;i<10;i++)
       }
   }
 }
+// cout << int(ho_t*10)/4 << " " <<  -1*int(vo_t*10)/4 << endl;
+if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]==0)
+{
+	if(fall>-3.6)
+		fall-=0.06;
+	else
+		arrow_work =1;
+}
 
-draw_cuboid(forplayer,3.5,3.5,0,1);
-draw_cuboid(forplayer,3.3,3.5,0,-1);
   // Increment angles
   float increments = 1;
-  if(rectangle_rotation>45 || rectangle_rotation<-45)
+  if((rectangle_rotation>25 || rectangle_rotation<-25) && no_of_walks>=0)
   {
   	rectangle_rot_dir *=-1;
+    // no_of_walks--;
   }
-// cout << rectangle_rotation << endl;
-  //camera_rotation_angle++; // Simulating camera rotation
+
+  // cout << x_turn << " " << z_turn << endl;
+  // camera_rotation_angle++; // Simulating camera rotation
   // triangle_rotation = triangle_rotation + increments*triangle_rot_dir*triangle_rot_status;
   rectangle_rotation = rectangle_rotation + increments*rectangle_rot_dir*rectangle_rot_status;
 }
@@ -583,6 +659,8 @@ void initGL (GLFWwindow* window, int width, int height)
 	rectangle = createRectangle (0.2,0.2,0.2,GL_FILL);
   trans = createRectangle(0.2,0.2,0.2,GL_LINE);
   forplayer = createRectangle(0.05,0.2,0.05,GL_FILL);
+  body = createRectangle(0.2,0.2,0.05,GL_FILL);
+  body_x = createRectangle(0.05,0.1,0.1,GL_FILL);
 	
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
