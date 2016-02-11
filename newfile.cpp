@@ -123,6 +123,7 @@ void quit(GLFWwindow *window)
 }
 
 
+
 /* Generate VAO, VBOs and return VAO handle */
 struct VAO* create3DObject (GLenum primitive_mode, int numVertices, const GLfloat* vertex_buffer_data, const GLfloat* color_buffer_data, GLenum fill_mode=GL_FILL)
 {
@@ -216,17 +217,24 @@ bool x_turn =0;
 bool z_turn =1;
 int no_of_walks =0;
 float obstacle;
+int x=40,y=0,z=0,x1=10,z1=0;
+float rotatebuilding=0;
+float rotatebuilding1=0;
+float player_height = 9;
+bool only_player=0;
+bool top_view = 0;
+bool rotate_build=1,player_eye=0,dont_show=0,dont_show1=0,ind=0;
 
-int const test[10][10] = {{9,0,9,9,9,9,9,9,9,9},
-                {9,9,0,9,9,9,0,9,9,9},
-                {9,9,9,9,9,9,9,9,9,9},
-                {0,9,9,0,9,9,9,9,9,0},
-                {9,9,9,9,9,9,0,9,9,9},
-                {9,9,9,13,9,9,9,9,9,9},
-                {9,9,9,9,9,9,0,13,9,9},
-                {9,9,0,9,9,9,9,9,9,0},
-                {9,9,9,9,0,9,9,9,9,9},
-                {9,9,0,9,9,9,9,9,9,9}};
+int const test[10][10] = {{9,7,9,7,9,8,9,9,9,9},
+                {9,9,5,9,9,9,1,9,9,9},
+                {9,9,9,5,9,9,9,9,9,9},
+                {1,9,9,12,9,7,9,7,9,1},
+                {9,9,9,9,1,9,9,9,4,9},
+                {9,9,9,12,9,9,9,9,9,9},
+                {9,5,9,9,9,9,1,12,9,9},
+                {9,9,1,9,9,2,9,9,9,1},
+                {9,9,9,9,1,9,5,9,9,9},
+                {9,9,1,9,3,9,9,9,9,9}};
 
 /* Executed when a regular key is pressed/released/held-down */
 /* Prefered for Keyboard events */
@@ -274,6 +282,12 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
         	ho_t = floor(ho_t*10);
         	ho_t=ho_t/10;
           no_of_walks=1;
+          if(player_eye==1)
+          {
+            dont_show=1;
+            dont_show1=0;
+          }
+          ind=0;
           cout << ho_t << " " << vo_t << endl;
           if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
             ho_t+=0.2;
@@ -287,6 +301,12 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
         	ho_t = floor(ho_t*10);
         	ho_t=ho_t/10;
           no_of_walks=1;
+          if(player_eye==1)
+          {
+            dont_show=1;
+            dont_show1=0;
+            ind=1;
+          }
           if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
             ho_t-=0.2;
         	break;
@@ -300,6 +320,11 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
           no_of_walks=1;
           if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
             vo_t+=0.2;
+          if(player_eye==1)
+          {
+            dont_show1=1;
+            dont_show=0;
+          }
         	break;
         case 's':
         	x_turn=0;
@@ -311,12 +336,77 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
           no_of_walks=1;
           if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
             vo_t-=0.2;
+          if(player_eye==1)
+          {
+            dont_show1=1;
+            dont_show=0;
+          }
         	break;
+        case 'r':
+          // x++;
+          rotate_build = 1;
+          // only_player = 0;
+          rotatebuilding += M_PI/30;
+          rotatebuilding1 += M_PI/30;
+          x = 40*cos(rotatebuilding);
+          z = 40*sin(rotatebuilding);
+          x1 = 10*cos(rotatebuilding);
+          z1 = 10*sin(rotatebuilding);
+          // z--;
+          break;
+        case 'X':
+          x--;
+          break;
+        case 'x':
+          x++;
+          break;
+        case 'y':
+          y++;
+          break;
+        case 'Y':
+          y--;
+          break;
+        case 'z':
+          z++;
+          break;
+        case 'Z':
+          z--;
+        case 'o':
+          only_player = 1;
+          top_view = 0;
+          dont_show=0;
+          dont_show1=0;
+          break;
+        case 'O':
+          only_player = 0;
+          dont_show=0;
+          dont_show1=0;
+          break;
+        case 't':
+          top_view = 1;
+          only_player = 0;
+          player_eye = 0;
+          break;
+        case 'T':
+          top_view = 0;
+          break;
+        case 'p':
+          player_eye =1;
+          top_view = 0;
+          only_player = 0;
+          break;
+        case 'P':
+          player_eye =0;
+          dont_show=0;
+          dont_show1=0;
+          break;
 
 		default:
 			break;
 	}
 }
+
+
 
 /* Executed when a mouse button is pressed/released */
 void mouseButton (GLFWwindow* window, int button, int action, int mods)
@@ -346,8 +436,8 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
      is different from WindowSize */
     glfwGetFramebufferSize(window, &fbwidth, &fbheight);
 
-	GLfloat fov = 90.0f;
-
+	// GLfloat fov = 90.0f;
+    GLfloat fov = 0.2f;
 	// sets the viewport of openGL renderer
 	glViewport (0, 0, (GLsizei) fbwidth, (GLsizei) fbheight);
 
@@ -357,17 +447,28 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
 	   gluPerspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1, 500.0); */
 	// Store the projection matrix in a variable for future use
     // Perspective projection for 3D views
-    // Matrices.projection = glm::perspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
+    Matrices.projection = glm::perspective (fov, (GLfloat) fbwidth / (GLfloat) fbheight, 0.1f, 500.0f);
 
     // Ortho projection for 2D views
-    Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 500.0f);
+    // Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 500.0f);
 }
 
-VAO *triangle, *rectangle ,*trans, *forplayer, *body, *body_x;
+VAO *triangle, *rectangle ,*trans, *forplayer, *body, *body_x, *arrow1, *arrow2, *arrow3, *arrow4 , *small_cube;
 
 // Creates the triangle object used in this sample code
-void createTriangle ()
+VAO* createTriangle (float x,float y,float z,float w)
 {
+  static const GLfloat vertex_buffer_data [] = {
+    x,0,z, // vertex 0
+    w,0,y, // vertex 1
+    -x,0,-z, // vertex 2
+  };
+  static const GLfloat color_buffer_data [] = {
+    1,1,1, // color 0
+    1,1,1, // color 1
+    1,1,1, // color 2
+  };
+  return create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_FILL);
 }
 
 // Creates the rectangle object used in this sample code
@@ -526,6 +627,7 @@ void draw_cuboid(VAO *obj,float x_pos,float y_pos,float z_pos,int flag,int x_wal
   draw3DObject(obj);
 }
 
+
 void draw ()
 {
 	
@@ -547,7 +649,29 @@ void draw ()
   // Compute Camera matrix (view)
   // Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
   //  Don't change unless you are sure!!
-  Matrices.view = glm::lookAt(glm::vec3(5,20,30), glm::vec3(0,0,0), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+  if(only_player==0 && top_view==0 && player_eye==0)
+    Matrices.view = glm::lookAt(glm::vec3(0+x,20+y,0+z), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+  else if(only_player==1)
+    Matrices.view = glm::lookAt(glm::vec3(0+x1,y,z1), glm::vec3(-2.9+ho_t-0.1,5-((9-player_height)*0.4),vo_t+0.8-0.6), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+  else if(top_view==1)
+    Matrices.view = glm::lookAt(glm::vec3(0,30,0), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+  else
+  {
+    // cout << "1111" << endl;
+    // Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1-1,5-((9-player_height)*0.4),vo_t+0.8-0.6-0.1), glm::vec3(1,5+y,-40), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+
+    if(ind==1)
+      Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1-1,5-((9-player_height)*0.4),vo_t+0.8-0.6-0.1), glm::vec3(40,5+y,1), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+    else
+      Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1-1,2+5-((9-player_height)*0.4),vo_t+0.8-0.6-0.1), glm::vec3(-40,5+y,1), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+    dont_show=1;
+  }
+  // 200,5+y,-00
+
+
+  // Matrices.view = glm::lookAt(glm::vec3(0,6,20), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+  // cout << x  << " " << y << " " << z << endl;
+  // Matrices.view = glm::lookAt(glm::vec3(5,30,30), glm::vec3(-1.2,1.4,1.6), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
 
   // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
   //  Don't change unless you are sure!!
@@ -557,19 +681,21 @@ void draw ()
   // For each model you render, since the MVP will be different (at least the M part)
   //  Don't change unless you are sure!!
   glm::mat4 MVP;	// MVP = Projection * View * Model
-
+cout << dont_show1 << dont_show << endl;
 if(z_turn==1)
 {
-  draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,1,0,1);
-  draw_cuboid(forplayer,-2.8+ho_t,2+fall,vo_t+0.8,-1,0,1);
-  draw_cube(body,-2.9+ho_t,2.3+fall,vo_t+0.8);
+  // draw_cuboid(forplayer,-3+ho_t,2+fall-0.3,vo_t+0.8,1,0,1);
+  // draw_cuboid(forplayer,-2.8+ho_t,2+fall,vo_t+0.8,-1,0,1);
+  draw_cube(body,-2.9+ho_t-0.1,5-((9-player_height)*0.4),vo_t+0.8-0.6);
 }
-if(x_turn==1)
+if(x_turn==1 && dont_show==0)
 {
-  draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,1,1,0);
-  draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,-1,1,0);
-  draw_cube(body_x,-3+ho_t,2.3+fall,vo_t+0.8);      
+  // draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,1,1,0);
+  // draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,-1,1,0);
+  draw_cube(body_x,-3+ho_t-0.1,5-((9-player_height)*0.4),vo_t+0.8-0.8);      
 }
+draw_cube(small_cube,1,5,3);
+// draw_cube(body_x,-1,3,-1.8);
 
 for(int i=0;i<10;i++)
 {
@@ -578,20 +704,27 @@ for(int i=0;i<10;i++)
       for(int k=0;k<test[i][j];k++)
       {
         if(k%2==0 && k<=9)
-          draw_cube(rectangle,-3+j*0.4,-2+k*0.4,-i*0.4);
+          draw_cube(rectangle,-3+j*0.4,-2+k*0.4+3.4,-i*0.4);
         else
-          draw_cube(trans,-3+j*0.4,-2+k*0.4,-i*0.4);
+          draw_cube(trans,-3+j*0.4,-2+k*0.4+3.4,-i*0.4);
       }
   }
 }
 // cout << int(ho_t*10)/4 << " " <<  -1*int(vo_t*10)/4 << endl;
-if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]==0)
+if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]<player_height)
 {
-	if(fall>-3.6)
-		fall-=0.06;
-	else
-		arrow_work =1;
+  cout << "1234" << endl;
+  player_height -= 0.04;
+  cout << player_height << endl;
+	// if(fall>-3.6)
+	// 	fall-=0.06;
+	// else
+	// 	arrow_work =1;
 }
+
+
+
+
 
 // if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
 // {
@@ -608,10 +741,10 @@ float increments = 1;
 if((rectangle_rotation>25 || rectangle_rotation<-25) && no_of_walks>=0)
 {
   rectangle_rot_dir *=-1;
-  cout << "{{{{{{{{{{" << no_of_walks <<  endl;
+  // cout << "{{{{{{{{{{" << no_of_walks <<  endl;
   if(no_of_walks>0)
     no_of_walks--;
-  cout << "<<<<<<" << no_of_walks <<  endl;
+  // cout << "<<<<<<" << no_of_walks <<  endl;
 }
 
   // cout << x_turn << " " << z_turn << endl;
@@ -680,6 +813,10 @@ void initGL (GLFWwindow* window, int width, int height)
   forplayer = createRectangle(0.05,0.2,0.05,GL_FILL);
   body = createRectangle(0.2,0.2,0.05,GL_FILL);
   body_x = createRectangle(0.05,0.2,0.2,GL_FILL);
+  arrow2 = createTriangle(0.4,0.3,0,0);
+  small_cube = createRectangle(0.05,0.05,0.05,GL_FILL);
+
+  cout << "123456" << endl;
 	
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
