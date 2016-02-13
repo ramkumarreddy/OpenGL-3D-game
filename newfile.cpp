@@ -11,6 +11,20 @@
 #include <glm/gtx/transform.hpp>
 #include <glm/gtc/matrix_transform.hpp>
 
+#include <bits/stdc++.h>
+#include <ao/ao.h>
+#include <mpg123.h>
+#include <thread>
+
+#define ll long long
+#define mp(x,y) make_pair(x,y)
+#define pr pair<int,int>
+#define F first
+#define S second
+#define pb push_back
+
+#define BITS 8
+
 using namespace std;
 
 struct VAO {
@@ -200,6 +214,39 @@ void draw3DObject (struct VAO* vao)
     glDrawArrays(vao->PrimitiveMode, 0, vao->NumVertices); // Starting from vertex 0; 3 vertices total -> 1 triangle
 }
 
+void* play_audio(string audioFile){   
+  mpg123_handle *mh;
+  unsigned char *buffer;
+  size_t buffer_size;
+  size_t done;
+  int err;
+  int driver;
+  ao_device *dev;
+  ao_sample_format format;
+  int channels, encoding;
+  long rate;    /* initializations */
+  ao_initialize();
+  driver = ao_default_driver_id();
+  mpg123_init();
+  mh = mpg123_new(NULL, &err);
+  buffer_size = mpg123_outblock(mh);
+  buffer = (unsigned char*) malloc(buffer_size * sizeof(unsigned char));
+  mpg123_open(mh, &audioFile[0]);   mpg123_getformat(mh, &rate, &channels, &encoding);
+  format.bits = mpg123_encsize(encoding) * 8;
+  format.rate = rate;
+  format.channels = channels;
+  format.byte_format = AO_FMT_NATIVE;
+  format.matrix = 0;
+  dev = ao_open_live(driver, &format, NULL);
+  char *p =(char *)buffer;
+  while (mpg123_read(mh, buffer, buffer_size, &done) == MPG123_OK)
+  ao_play(dev, p, done);    /* clean up */  
+  free(buffer);   
+  ao_close(dev);  
+  mpg123_close(mh);   
+  mpg123_delete(mh);
+}
+
 /**************************
  * Customizable functions *
  **************************/
@@ -223,13 +270,13 @@ float rotatebuilding1=0;
 float player_height = 9;
 bool only_player=0;
 bool top_view = 0;
-bool rotate_build=1,player_eye=0,dont_show=0,dont_show1=0,ind=0;
+bool rotate_build=1,player_eye=0,dont_show=0,dont_show1=0,ind=1,inw=0,ina=0,ins=0;
 
-int const test[10][10] = {{9,7,9,7,9,8,9,9,9,9},
+int const test[10][10] = {{9,9,9,7,9,7,9,9,9,9},
                 {9,9,5,9,9,9,1,9,9,9},
                 {9,9,9,5,9,9,9,9,9,9},
                 {1,9,9,12,9,7,9,7,9,1},
-                {9,9,9,9,1,9,9,9,4,9},
+                {9,9,9,9,1,9,9,9,5,9},
                 {9,9,9,12,9,9,9,9,9,9},
                 {9,5,9,9,9,9,1,12,9,9},
                 {9,9,1,9,9,2,9,9,9,1},
@@ -288,10 +335,15 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
             dont_show1=0;
           }
           ind=0;
-          cout << ho_t << " " << vo_t << endl;
-          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
+          ina=1;
+          inw=0;
+          ins=0;
+          // thread(play_audio,"Mario - Jump.mp3").detach();
+          // play_audio("jump_01.mp3");
+          // cout << ho_t << " " << vo_t << endl;
+          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9 && player_height==9)
             ho_t+=0.2;
-          cout << ho_t << " " << vo_t << endl;
+          // cout << ho_t << " " << vo_t << endl;
         	break;
         case 'd':
         	x_turn=1;
@@ -305,42 +357,74 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
           {
             dont_show=1;
             dont_show1=0;
-            ind=1;
           }
-          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
-            ho_t-=0.2;
+          cout << vo_t << " " << ho_t << " ---" << endl;
+          // thread(play_audio,"Mario - Jump.mp3").detach();
+          ind=1;
+          ina=0;
+          inw=0;
+          ins=0;
+          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9 && player_height==9)
+          {
+            // if(int(10*vo_t)%4==0 && int(10*ho_t)%4==0)
+              ho_t-=0.2;
+          }
         	break;
         case 'w':
         	x_turn=0;
         	z_turn=1;
+          // temp=vo_t;
         	if(arrow_work==0)
         		vo_t-=0.2;
         	vo_t = floor(vo_t*10);
+          cout << vo_t << endl;
         	vo_t=vo_t/10;
+          cout << ":::" << vo_t << endl;
           no_of_walks=1;
-          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
-            vo_t+=0.2;
+          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9 && player_height==9)
+          {
+            // if(int(10*vo_t)%4==0 && int(10*ho_t)%4==0)
+              vo_t+=0.2;
+          }
+          // cout << vo_t << " " << ho_t << endl;
           if(player_eye==1)
           {
             dont_show1=1;
             dont_show=0;
           }
+          // thread(play_audio,"Mario - Jump.mp3").detach(); 
+          ind=0;
+          ina=0;
+          inw=1;
+          ins=0;
         	break;
         case 's':
         	x_turn=0;
         	z_turn=1;
         	if(arrow_work==0)
         		vo_t+=0.2;
+          cout << vo_t*10 << endl;
         	vo_t = floor(vo_t*10);
+          if(int(-1*vo_t)%2==1)
+          {
+            vo_t+=1;
+            cout << "----" << endl;
+          }
+          cout << vo_t << endl;
         	vo_t=vo_t/10;
           no_of_walks=1;
-          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
+          if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9  && player_height==9)
             vo_t-=0.2;
           if(player_eye==1)
           {
             dont_show1=1;
             dont_show=0;
           }
+          ind=0;
+          ina=0;
+          inw=0;
+          ins=1;
+          // thread(play_audio,"Mario - Jump.mp3").detach();
         	break;
         case 'r':
           // x++;
@@ -658,16 +742,20 @@ void draw ()
   else
   {
     // cout << "1111" << endl;
-    // Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1-1,5-((9-player_height)*0.4),vo_t+0.8-0.6-0.1), glm::vec3(1,5+y,-40), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+    // cout << inw << " " << ins << " " << ina << " " << ind << endl;
+    if(inw==1)
+      Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1,5-((9-player_height)*0.4)-0.1,vo_t+0.2), glm::vec3(-2,-2+y,-80), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+    if(ins==1)
+      Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1,5-((9-player_height)*0.4)-0.1,vo_t+0.3), glm::vec3(-2,-2+y,80), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
 
     if(ind==1)
-      Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1-1,5-((9-player_height)*0.4),vo_t+0.8-0.6-0.1), glm::vec3(40,5+y,1), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
-    else
-      Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1-1,2+5-((9-player_height)*0.4),vo_t+0.8-0.6-0.1), glm::vec3(-40,5+y,1), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
-    dont_show=1;
+      Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1-1,5-((9-player_height)*0.4),vo_t+0.8-0.6-0.1), glm::vec3(40,y+5-((9-player_height)*0.4)-3,1), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+    if(ina==1)
+      Matrices.view = glm::lookAt(glm::vec3(-2.9+ho_t-0.1-1,2+5-((9-player_height)*0.4),vo_t+0.8-0.6-0.1), glm::vec3(-40,y+5-((9-player_height)*0.4)-3,1), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+    // dont_show=1;
   }
   // 200,5+y,-00
-
+// cout << 5-((9-player_height)*0.4) << " ______ "<<  endl;
 
   // Matrices.view = glm::lookAt(glm::vec3(0,6,20), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
   // cout << x  << " " << y << " " << z << endl;
@@ -675,13 +763,14 @@ void draw ()
 
   // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
   //  Don't change unless you are sure!!
+  
   glm::mat4 VP = Matrices.projection * Matrices.view;
 
   // Send our transformation to the currently bound shader, in the "MVP" uniform
   // For each model you render, since the MVP will be different (at least the M part)
   //  Don't change unless you are sure!!
   glm::mat4 MVP;	// MVP = Projection * View * Model
-cout << dont_show1 << dont_show << endl;
+// cout << dont_show1 << dont_show << endl;
 if(z_turn==1)
 {
   // draw_cuboid(forplayer,-3+ho_t,2+fall-0.3,vo_t+0.8,1,0,1);
@@ -696,7 +785,8 @@ if(x_turn==1 && dont_show==0)
 }
 draw_cube(small_cube,1,5,3);
 // draw_cube(body_x,-1,3,-1.8);
-
+// thread(play_audio,"Mario - Jump.mp3").detach();
+// cout << "audio" << endl;
 for(int i=0;i<10;i++)
 {
   for(int j=0;j<10;j++)
@@ -710,12 +800,17 @@ for(int i=0;i<10;i++)
       }
   }
 }
+
+// cout << test[-1*int(vo_t*10)/4][int(ho_t*10)/4] << " " << -1*int(vo_t*10)/4 << " " <<  vo_t << " " <<  int(10*vo_t)%4 << " " << int(ho_t*10)/4 << " " << ho_t <<  endl;
 // cout << int(ho_t*10)/4 << " " <<  -1*int(vo_t*10)/4 << endl;
 if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]<player_height)
 {
-  cout << "1234" << endl;
-  player_height -= 0.04;
-  cout << player_height << endl;
+  // cout << "1234" << endl;
+  // cout << int(-1*vo_t)%4 <<
+  if(int(10*vo_t)%4==0 && int(10*ho_t)%4==0)
+    player_height -= 0.04;
+  // cout << player_height << endl;
+
 	// if(fall>-3.6)
 	// 	fall-=0.06;
 	// else
@@ -815,9 +910,6 @@ void initGL (GLFWwindow* window, int width, int height)
   body_x = createRectangle(0.05,0.2,0.2,GL_FILL);
   arrow2 = createTriangle(0.4,0.3,0,0);
   small_cube = createRectangle(0.05,0.05,0.05,GL_FILL);
-
-  cout << "123456" << endl;
-	
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	// Get a handle for our "MVP" uniform
