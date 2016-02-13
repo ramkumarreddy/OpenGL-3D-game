@@ -1,0 +1,10 @@
+all: sample2D1
+
+#sample3D: Sample_GL3_3D.cpp glad.c
+#	g++ -o sample3D Sample_GL3.cpp glad.c -lGL -lglfw
+
+sample2D1: newfile.cpp glad.c
+	g++ -o sample2D1 newfile.cpp glad.c -lGL -lglfw -ldl -lao -lmpg123 -std=c++11 -lpthread
+
+clean:
+	rm sample2D1

@@ -274,6 +274,9 @@ bool rotate_build=1,player_eye=0,dont_show=0,dont_show1=0,ind=1,inw=0,ina=0,ins=
 int bigradius=40;
 double xmousePos,ymousePos,xmousePos1,ymousePos1;
 int shiftx = 0,shifty=0;
+float horizontal_position=0,vertical_position=0,angle_thrown=M_PI/2.5,initial_velocity=7.7,time_travel=0,z_position=0;
+bool jump_initiated = 0;
+int toaddh=1,toaddv=-1;
 
 int const test[10][10] = {{9,9,9,7,9,7,9,9,9,9},
                 {9,9,5,9,9,9,1,9,9,9},
@@ -325,7 +328,7 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
             quit(window);
             break;
         case 'a':
-        	if(arrow_work==0)
+        	// if(arrow_work==0)
         		ho_t-=0.2;
         	x_turn=1;
         	z_turn=0;
@@ -351,7 +354,7 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
         case 'd':
         	x_turn=1;
         	z_turn=0;
-        	if(arrow_work==0)
+        	// if(arrow_work==0)
         		ho_t+=0.2;
         	ho_t = floor(ho_t*10);
         	ho_t=ho_t/10;
@@ -377,7 +380,7 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
         	x_turn=0;
         	z_turn=1;
           // temp=vo_t;
-        	if(arrow_work==0)
+        	// if(arrow_work==0)
         		vo_t-=0.2;
         	vo_t = floor(vo_t*10);
           cout << vo_t << endl;
@@ -404,17 +407,18 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
         case 's':
         	x_turn=0;
         	z_turn=1;
-        	if(arrow_work==0)
+        	// if(arrow_work==0)
         		vo_t+=0.2;
-          cout << vo_t*10 << endl;
+          // cout << vo_t*10 << endl;
         	vo_t = floor(vo_t*10);
           if(int(-1*vo_t)%2==1)
           {
             vo_t+=1;
-            cout << "----" << endl;
+            // cout << "----" << endl;
           }
-          cout << vo_t << endl;
+          
         	vo_t=vo_t/10;
+          cout << vo_t << endl;
           no_of_walks=1;
           if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9  && player_height==9)
             vo_t-=0.2;
@@ -487,6 +491,8 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
           dont_show=0;
           dont_show1=0;
           break;
+        case ' ':
+          jump_initiated =1;
 
 		default:
 			break;
@@ -703,6 +709,15 @@ float triangle_rotation = 0;
 /* Render the scene with openGL */
 /* Edit this function according to your assignment */
 
+float jump(float horizontal_position)
+{
+  horizontal_position += initial_velocity*cos(angle_thrown)*0.005;
+  vertical_position += initial_velocity*sin(angle_thrown)*0.005 - (time_travel*time_travel);
+  time_travel +=0.01;
+  cout << horizontal_position << " " << vertical_position << endl;
+  return horizontal_position;
+}
+
 void draw_cube(VAO *obj,float x_pos,float y_pos,float z_pos)
 {
   glm::mat4 VP = Matrices.projection * Matrices.view;
@@ -767,7 +782,7 @@ void draw ()
   if(only_player==0 && top_view==0 && player_eye==0)
     Matrices.view = glm::lookAt(glm::vec3(0+x+shiftx,20+y+shifty,0+z), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
   else if(only_player==1)
-    Matrices.view = glm::lookAt(glm::vec3(0+x1+shiftx,y+shifty,z1), glm::vec3(-2.9+ho_t-0.1,5-((9-player_height)*0.4),vo_t+0.8-0.6), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+    Matrices.view = glm::lookAt(glm::vec3(0+x1+shiftx,y+shifty,z1), glm::vec3(-2.9+ho_t-0.1+(horizontal_position*toaddh),5-((9-player_height)*0.4)+vertical_position,vo_t+0.8-0.6+(z_position*toaddv)), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
   else if(top_view==1)
     Matrices.view = glm::lookAt(glm::vec3(0,30,0), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
   else
@@ -806,17 +821,52 @@ if(z_turn==1)
 {
   // draw_cuboid(forplayer,-3+ho_t,2+fall-0.3,vo_t+0.8,1,0,1);
   // draw_cuboid(forplayer,-2.8+ho_t,2+fall,vo_t+0.8,-1,0,1);
-  draw_cube(body,-2.9+ho_t-0.1,5-((9-player_height)*0.4),vo_t+0.8-0.6);
+  draw_cube(body,-2.9+ho_t-0.1+(horizontal_position*toaddh),5-((9-player_height)*0.4)+vertical_position,vo_t+0.8-0.6+(toaddv*z_position));
 }
+// cout << -2.9+ho_t-0.1 << " " << -2.9+ho_t-0.1+horizontal_position <<  " " << horizontal_position << "(((" << endl;
+
 if(x_turn==1 && dont_show==0)
 {
   // draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,1,1,0);
   // draw_cuboid(forplayer,-3+ho_t,2+fall,vo_t+0.8,-1,1,0);
-  draw_cube(body_x,-3+ho_t-0.1,5-((9-player_height)*0.4),vo_t+0.8-0.8);      
+  draw_cube(body_x,-3+ho_t-0.1+(horizontal_position*toaddh),5-((9-player_height)*0.4)+vertical_position,vo_t+0.8-0.8+(toaddv*z_position));      
 }
-draw_cube(small_cube,1,5,3);
+if(jump_initiated==1)
+{
+  if(ind==1 || ina==1)
+    horizontal_position = jump(horizontal_position);
+  else
+    z_position = jump(z_position);
+  if(ind==1)
+  {
+    toaddh = 1;
+  }
+  if(ina==1)
+    toaddh = -1;
+  if(inw==1)
+    toaddv = -1;
+  if(ins==1)
+    toaddv = 1;
+  if(vertical_position<0)
+  {
+    jump_initiated=0;
+    horizontal_position=0;
+    z_position=0;
+    vertical_position=0;
+    time_travel=0;
+    if(ina==1)
+      ho_t -= 0.4;
+    if(ind==1)
+      ho_t += 0.4;
+    if(inw==1)
+      vo_t -= 0.4;
+    if(ins==1)
+      vo_t += 0.4;
+  }
+
+}
+// draw_cube(small_cube,1,5,3);
 // draw_cube(body_x,-1,3,-1.8);
-// thread(play_audio,"Mario - Jump.mp3").detach();
 // cout << "audio" << endl;
 for(int i=0;i<10;i++)
 {
@@ -846,6 +896,11 @@ if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]<player_height)
 	// 	fall-=0.06;
 	// else
 	// 	arrow_work =1;
+}
+
+if((-1*int(vo_t*10)/4)==9 && (int(ho_t*10)/4)==9)
+{
+  cout << "You Win" << endl;
 }
 
 
