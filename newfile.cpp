@@ -271,6 +271,9 @@ float player_height = 9;
 bool only_player=0;
 bool top_view = 0;
 bool rotate_build=1,player_eye=0,dont_show=0,dont_show1=0,ind=1,inw=0,ina=0,ins=0;
+int bigradius=40;
+double xmousePos,ymousePos,xmousePos1,ymousePos1;
+int shiftx = 0,shifty=0;
 
 int const test[10][10] = {{9,9,9,7,9,7,9,9,9,9},
                 {9,9,5,9,9,9,1,9,9,9},
@@ -432,8 +435,8 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
           // only_player = 0;
           rotatebuilding += M_PI/30;
           rotatebuilding1 += M_PI/30;
-          x = 40*cos(rotatebuilding);
-          z = 40*sin(rotatebuilding);
+          x = bigradius*cos(rotatebuilding);
+          z = bigradius*sin(rotatebuilding);
           x1 = 10*cos(rotatebuilding);
           z1 = 10*sin(rotatebuilding);
           // z--;
@@ -490,7 +493,21 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
 	}
 }
 
-
+void cbfun (GLFWwindow* window, double x,double y)
+{
+  if(y==-1)
+  {
+    bigradius++;
+    x = bigradius*cos(rotatebuilding);
+    z = bigradius*sin(rotatebuilding);
+  }
+  if(y==1)
+  {
+    bigradius--;
+    x = bigradius*cos(rotatebuilding);
+    z = bigradius*sin(rotatebuilding);
+  }
+}
 
 /* Executed when a mouse button is pressed/released */
 void mouseButton (GLFWwindow* window, int button, int action, int mods)
@@ -498,7 +515,21 @@ void mouseButton (GLFWwindow* window, int button, int action, int mods)
     switch (button) {
         case GLFW_MOUSE_BUTTON_LEFT:
             if (action == GLFW_RELEASE)
-                triangle_rot_dir *= -1;
+            {
+                glfwGetCursorPos(window,&xmousePos1,&ymousePos1);
+                ymousePos1 = 600 - ymousePos1;
+                // cout << ymousePos1 << "++" << endl;
+                shifty +=-1*int(((ymousePos1 - ymousePos)*8)/600);
+              shiftx +=int(((xmousePos1 - xmousePos)*8)/600);
+            }
+            if(action == GLFW_PRESS)
+            {
+                glfwGetCursorPos(window,&xmousePos,&ymousePos);
+                ymousePos = 600 - ymousePos;
+                // cout << ymousePos << "--" << endl;
+            }
+            
+            // cout << int(((ymousePos1 - ymousePos)*8)/600) << " " << int(((xmousePos1 - xmousePos)*8)/600) << endl;
             break;
         case GLFW_MOUSE_BUTTON_RIGHT:
             if (action == GLFW_RELEASE) {
@@ -734,9 +765,9 @@ void draw ()
   // Matrices.view = glm::lookAt( eye, target, up ); // Rotating Camera for 3D
   //  Don't change unless you are sure!!
   if(only_player==0 && top_view==0 && player_eye==0)
-    Matrices.view = glm::lookAt(glm::vec3(0+x,20+y,0+z), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+    Matrices.view = glm::lookAt(glm::vec3(0+x+shiftx,20+y+shifty,0+z), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
   else if(only_player==1)
-    Matrices.view = glm::lookAt(glm::vec3(0+x1,y,z1), glm::vec3(-2.9+ho_t-0.1,5-((9-player_height)*0.4),vo_t+0.8-0.6), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
+    Matrices.view = glm::lookAt(glm::vec3(0+x1+shiftx,y+shifty,z1), glm::vec3(-2.9+ho_t-0.1,5-((9-player_height)*0.4),vo_t+0.8-0.6), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
   else if(top_view==1)
     Matrices.view = glm::lookAt(glm::vec3(0,30,0), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
   else
@@ -892,7 +923,7 @@ GLFWwindow* initGLFW (int width, int height)
 
     /* Register function to handle mouse click */
     glfwSetMouseButtonCallback(window, mouseButton);  // mouse button clicks
-
+    glfwSetScrollCallback (window,cbfun);
     return window;
 }
 
