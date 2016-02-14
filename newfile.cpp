@@ -278,8 +278,8 @@ int shiftx = 0,shifty=0;
 float horizontal_position=0,vertical_position=0,angle_thrown=M_PI/2.5,initial_velocity=7.7,time_travel=0,z_position=0;
 bool jump_initiated = 0;
 int toaddh=1,toaddv=-1;
-float board_position = 2.8,dire=1.0,forboardmovement=0;
-bool onboard=0;
+float board_position = 2.8,dire=1.0,forboardmovement=0,storeinitialposition=0;
+bool onboard=0,work=0;
 
 int const test[10][10] = {{9,9,9,7,9,7,9,9,9,9},
                 {9,9,5,9,9,9,1,9,9,9},
@@ -350,6 +350,7 @@ void keyboard (GLFWwindow* window, int key, int scancode, int action, int mods)
                   dont_show1=0;
                 }
                 cout << vo_t << " " << ho_t << " ---" << endl;
+
                 // thread(play_audio,"Mario - Jump.mp3").detach();
                ind=1;
                ina=0;
@@ -607,6 +608,15 @@ void keyboardChar (GLFWwindow* window, unsigned int key)
           break;
         case ' ':
           jump_initiated =1;
+          if(onboard==1)
+          {
+            storeinitialposition=forboardmovement;
+            if((board_position-4.7)<-1.8)
+            {
+              work=1;
+            }
+            cout << board_position-4.7 << "  @@@@@@@@@"  << endl;
+          }
 
 		default:
 			break;
@@ -684,7 +694,7 @@ void reshapeWindow (GLFWwindow* window, int width, int height)
     // Matrices.projection = glm::ortho(-4.0f, 4.0f, -4.0f, 4.0f, 0.1f, 500.0f);
 }
 
-VAO *triangle, *rectangle ,*trans, *forplayer, *body, *body_x, *arrow1, *arrow2, *arrow3, *arrow4 , *small_cube, *board;
+VAO *triangle, *rectangle ,*trans, *forplayer, *body, *body_x, *arrow1, *arrow2, *arrow3, *arrow4 , *small_cube, *board, *plane;
 
 // Creates the triangle object used in this sample code
 VAO* createTriangle (float x,float y,float z,float w)
@@ -700,6 +710,27 @@ VAO* createTriangle (float x,float y,float z,float w)
     1,1,1, // color 2
   };
   return create3DObject(GL_TRIANGLES, 3, vertex_buffer_data, color_buffer_data, GL_FILL);
+}
+
+VAO createPlane()
+{
+  static const GLfloat vertex_buffer_data [] = {
+    165,0,0, // vertex 0
+    0,0,0, // vertex 1
+    0,0,-165, // vertex 2
+    165,0,0,
+    0,0,-165,
+    165,0,-165,
+  };
+  static const GLfloat color_buffer_data [] = {
+    0/255.0,128/255.0,255/255.0, // color 0
+    0/255.0,128/255.0,255/255.0,
+    0/255.0,128/255.0,255/255.0,
+    0/255.0,128/255.0,255/255.0,
+    0/255.0,128/255.0,255/255.0,
+    0/255.0,128/255.0,255/255.0,
+  };
+  plane = create3DObject(GL_TRIANGLES, 6, vertex_buffer_data, color_buffer_data, GL_FILL); 
 }
 
 // Creates the rectangle object used in this sample code
@@ -913,15 +944,7 @@ void draw ()
     // dont_show=1;
   }
   // 200,5+y,-00
-// cout << 5-((9-player_height)*0.4) << " ______ "<<  endl;
 
-  // Matrices.view = glm::lookAt(glm::vec3(0,6,20), glm::vec3(-1,3+0,-1.8), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
-  // cout << x  << " " << y << " " << z << endl;
-  // Matrices.view = glm::lookAt(glm::vec3(5,30,30), glm::vec3(-1.2,1.4,1.6), glm::vec3(0,1,0)); // Fixed camera for 2D (ortho) in XY plane
-
-  // Compute ViewProject matrix as view/camera might not be changed for this frame (basic scenario)
-  //  Don't change unless you are sure!!
-  
   glm::mat4 VP = Matrices.projection * Matrices.view;
 
   // Send our transformation to the currently bound shader, in the "MVP" uniform
@@ -934,9 +957,16 @@ if(z_turn==1)
   // draw_cuboid(forplayer,-3+ho_t,2+fall-0.3,vo_t+0.8,1,0,1);
   // draw_cuboid(forplayer,-2.8+ho_t,2+fall,vo_t+0.8,-1,0,1);
   if(onboard==0)
+  {
     forboardmovement = vo_t+0.8-0.6+(toaddv*z_position);
+  }
   else
-    forboardmovement = board_position-4.55;
+  {
+    if(jump_initiated==0)
+      forboardmovement = board_position-4.55+(toaddv*z_position);
+    else
+      forboardmovement = storeinitialposition + (toaddv*z_position);
+  }
   draw_cube(body,-2.9+ho_t-0.1+(horizontal_position*toaddh),5-((9-player_height)*0.4)+vertical_position,forboardmovement);
 }
 // cout << -2.9+ho_t-0.1 << " " << -2.9+ho_t-0.1+horizontal_position <<  " " << horizontal_position << "(((" << endl;
@@ -950,9 +980,13 @@ if(x_turn==1 && dont_show==0)
 if(jump_initiated==1)
 {
   if(ind==1 || ina==1)
+  {
     horizontal_position = jump(horizontal_position);
+  }
   else
+  {
     z_position = jump(z_position);
+  }
   if(ind==1)
   {
     toaddh = 1;
@@ -969,6 +1003,12 @@ if(jump_initiated==1)
     horizontal_position=0;
     z_position=0;
     vertical_position=0;
+    if(onboard==1 && work==1)
+    {
+      onboard=0;
+      vo_t -= 1.0;
+      work;
+    }
     time_travel=0;
     if(ina==1)
       ho_t -= 0.4;
@@ -1001,6 +1041,7 @@ else if(board_position<=2.3)
   board_position+=(0.05*dire);
   board_position = GetFloatPrecision(board_position,2);
 }
+draw_cube(plane,-68,-10,60);
 for(int i=0;i<10;i++)
 {
   for(int j=0;j<10;j++)
@@ -1015,13 +1056,13 @@ for(int i=0;i<10;i++)
   }
 }
 
-// cout << test[-1*int(vo_t*10)/4][int(ho_t*10)/4] << " " << -1*int(vo_t*10)/4 << " " <<  vo_t << " " <<  int(10*vo_t)%4 << " " << int(ho_t*10)/4 << " " << ho_t <<  endl;
+
 // cout << int(ho_t*10)/4 << " " <<  -1*int(vo_t*10)/4 << endl;
 if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]<player_height && jump_initiated==0)
 {
   if(board_position-4.3>-1.3 && (5-((9-player_height)*0.4)+vertical_position)>4.8 && (-2.9+ho_t-0.1+(horizontal_position*toaddh)<=-2.8))
   {
-    cout << "1---" << endl;
+    // cout << "1---" << endl;
     onboard=1;
   }
   // cout << int(-1*vo_t)%4 <<
@@ -1039,10 +1080,17 @@ if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]<player_height && jump_initiated==0)
 	// else
 	// 	arrow_work =1;
 }
+
+if(( (int(ho_t*10)/4)<0 || ((-1*int(vo_t*10)/4)<0)) && player_height>0)
+{
+  player_height -=0.04;
+  cout << player_height << endl;
+}
+
 // cout << vo_t+0.8-0.6+(toaddv*z_position) << endl;
 // cout  << test[-1*int(vo_t*10)/4+1][int(ho_t*10)/4] << "***"<< int(vo_t*10)/4 << " &&&&&" << vo_t <<endl;
 
-cout << -2.9+ho_t-0.1+(horizontal_position*toaddh) << endl;
+// cout << -2.9+ho_t-0.1+(horizontal_position*toaddh) << endl;
 
 if((-1*int(vo_t*10)/4)==9 && (int(ho_t*10)/4)==9)
 {
@@ -1051,7 +1099,7 @@ if((-1*int(vo_t*10)/4)==9 && (int(ho_t*10)/4)==9)
 
 
 
-
+// cout << test[-1*int(vo_t*10)/4][int(ho_t*10)/4] << " " << -1*int(vo_t*10)/4 << " " << int(ho_t*10)/4 <<  endl;
 
 // if(test[-1*int(vo_t*10)/4][int(ho_t*10)/4]>9)
 // {
@@ -1143,6 +1191,7 @@ void initGL (GLFWwindow* window, int width, int height)
   arrow2 = createTriangle(0.4,0.3,0,0);
   small_cube = createRectangle(0.05,0.05,0.05,GL_FILL);
   board = createRectangle(0.2,0.05,0.2,GL_FILL);
+  createPlane();
 	// Create and compile our GLSL program from the shaders
 	programID = LoadShaders( "Sample_GL.vert", "Sample_GL.frag" );
 	// Get a handle for our "MVP" uniform
